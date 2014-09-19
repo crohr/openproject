@@ -1,3 +1,4 @@
+buildpack: https://github.com/pkgr/heroku-buildpack-ruby.git#universal-staging
 user: someuser
 group: somegroup
 targets:
