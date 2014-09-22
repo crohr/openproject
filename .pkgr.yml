@@ -9,6 +9,10 @@ targets:
       - debconf
       - memcached
   fedora-20:
+    build_dependencies:
+      - ImageMagick-devel
+    dependencies:
+      - memcached
 before_precompile: "packaging/setup"
 after_install: "packaging/debian/postinst"
 addons:
