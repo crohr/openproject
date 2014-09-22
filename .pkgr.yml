@@ -20,4 +20,4 @@ crons:
   - packaging/cron/openproject-clear-old-sessions
   - packaging/cron/openproject-create-svn-repositories
 services:
-  - postgres:9.4
+  - postgres
