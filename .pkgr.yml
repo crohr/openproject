@@ -8,7 +8,7 @@ targets:
     dependencies:
       - debconf
       - memcached
-  fedora20:
+  fedora-20:
 before_precompile: "packaging/setup"
 after_install: "packaging/debian/postinst"
 addons:
