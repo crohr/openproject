@@ -8,18 +8,18 @@ targets:
     dependencies:
       - debconf
       - memcached
+    after_install: "packaging/debian/postinst"
+    addons:
+      - mysql
+      - apache2
+      - svn-dav
+      - smtp
   fedora-20:
     build_dependencies:
       - ImageMagick-devel
     dependencies:
       - memcached
 before_precompile: "packaging/setup"
-after_install: "packaging/debian/postinst"
-addons:
-  - mysql
-  - apache2
-  - svn-dav
-  - smtp
 crons:
   - packaging/cron/openproject-clear-old-sessions
   - packaging/cron/openproject-create-svn-repositories
