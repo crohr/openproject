@@ -8,6 +8,7 @@ targets:
     dependencies:
       - debconf
       - memcached
+  fedora20:
 before_precompile: "packaging/setup"
 after_install: "packaging/debian/postinst"
 addons:
@@ -19,4 +20,4 @@ crons:
   - packaging/cron/openproject-clear-old-sessions
   - packaging/cron/openproject-create-svn-repositories
 services:
-  - postgres
+  - postgres:9.4
