@@ -28,7 +28,7 @@ wizards:
   - https://github.com/pkgr/addon-legacy-installer.git
   - https://github.com/pkgr/addon-mysql.git#suse
   - https://github.com/pkgr/addon-apache2.git#suse
-  - https://github.com/pkgr/addon-svn-dav.git#suse
+  - https://github.com/pkgr/addon-svn-dav.git#debian-8
   - https://github.com/pkgr/addon-smtp.git#suse
   - https://github.com/pkgr/addon-memcached.git#suse
   - https://github.com/pkgr/addon-openproject.git#suse
