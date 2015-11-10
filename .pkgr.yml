@@ -1,23 +1,26 @@
 user: openproject
 group: openproject
 targets:
-  debian-7: &debian
-    build_dependencies:
-      - libmagickwand-dev
-      - libsqlite3-dev
-  debian-8:
-    <<: *debian
-  ubuntu-14.04:
-    <<: *debian
-  fedora-20: &redhat
+  # debian-7: &debian
+  #   build_dependencies:
+  #     - libmagickwand-dev
+  #     - libsqlite3-dev
+  # debian-8:
+  #   <<: *debian
+  # ubuntu-14.04:
+  #   <<: *debian
+  # fedora-20: &redhat
+  #   build_dependencies:
+  #     - ImageMagick-devel
+  # centos-6:
+  #   <<: *redhat
+  # centos-7:
+  #   <<: *redhat
+  #   dependencies:
+  #     - epel-release
+  sles-11:
     build_dependencies:
       - ImageMagick-devel
-  centos-6:
-    <<: *redhat
-  centos-7:
-    <<: *redhat
-    dependencies:
-      - epel-release
   sles-12:
     build_dependencies:
       - ImageMagick-devel
@@ -26,13 +29,13 @@ crons:
   - packaging/cron/openproject-clear-old-sessions
 services:
   - postgres
-installer: https://github.com/pkgr/installer.git
+installer: https://github.com/pkgr/installer.git#testing
 wizards:
   - https://github.com/pkgr/addon-legacy-installer.git
   - https://github.com/pkgr/addon-mysql.git
   - https://github.com/pkgr/addon-apache2.git
   - https://github.com/finnlabs/addon-repositories.git
   - https://github.com/pkgr/addon-smtp.git
-  - https://github.com/pkgr/addon-memcached.git
+  - https://github.com/pkgr/addon-memcached.git#sles11
   - https://github.com/pkgr/addon-openproject.git
 buildpack: https://github.com/ddollar/heroku-buildpack-multi.git
