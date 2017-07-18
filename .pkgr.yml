@@ -37,10 +37,10 @@ crons:
   - packaging/cron/openproject-clear-uploaded-files
 services:
   - postgres
-installer: https://github.com/pkgr/installer.git
+installer: https://github.com/pkgr/installer.git#fix-mysql-password
 wizards:
   - https://github.com/pkgr/addon-legacy-installer.git
-  - https://github.com/pkgr/addon-mysql.git
+  - https://github.com/pkgr/addon-mysql.git#fix-mysql-password
   - https://github.com/pkgr/addon-apache2.git
   - https://github.com/finnlabs/addon-repositories.git
   - https://github.com/pkgr/addon-smtp.git
