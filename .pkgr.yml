@@ -45,11 +45,11 @@ services:
   - postgres
 installer: https://github.com/pkgr/installer.git
 wizards:
-  - https://github.com/pkgr/addon-legacy-installer.git
-  - https://github.com/pkgr/addon-mysql.git
-  - https://github.com/pkgr/addon-apache2.git
-  - https://github.com/finnlabs/addon-repositories.git
-  - https://github.com/pkgr/addon-smtp.git
-  - https://github.com/pkgr/addon-memcached.git
+  - https://github.com/pkgr/addon-legacy-installer.git#crohr-patch-1
+  - https://github.com/pkgr/addon-mysql.git#crohr-patch-1
+  - https://github.com/pkgr/addon-apache2.git#crohr-patch-1
+  - https://github.com/finnlabs/addon-repositories.git#crohr-patch-1
+  - https://github.com/pkgr/addon-smtp.git#crohr-patch-1
+  - https://github.com/pkgr/addon-memcached.git#crohr-patch-1
   - https://github.com/pkgr/addon-openproject.git
 buildpack: https://github.com/opf/heroku-buildpack-multi.git
