@@ -1,15 +1,10 @@
 #!/usr/bin/env ruby
+require 'uri'
 
-db_url = String(ENV["DATABASE_URL"]).strip
-mysql_url = String(ENV["MYSQL_DATABASE_URL"]).strip
+db_url = URI(ENV.fetch("DATABASE_URL"))
+mysql_url = URI(ENV.fetch("MYSQL_DATABASE_URL")) if ENV.has_key?("MYSQL_DATABASE_URL")
 
-if db_url == ""
-  puts "ERROR: expected DATABASE_URL in ENV"
-
-  exit 1
-end
-
-if db_url.start_with?("mysql")
+if db_url.scheme.start_with?("mysql")
   puts "WARNING: You are running MySQL. OpenProject will drop support for MySQL in 10.0."
   puts "         We can convert it to Postgres for you. Please setup postgres and "
   puts "         rerun this with MYSQL_DATABASE_URL pointing to your original database "
@@ -23,22 +18,21 @@ if db_url.start_with?("mysql")
   exit 0 # MySQL still supported until 9.x - with 10.0 we must make this an error (exit 1)
 end
 
-if db_url.start_with?("postgresql://") && mysql_url == ""
+if db_url.scheme.start_with?("postgresql") && mysql_url.nil?
   # nothing to do
-
   exit 0
 end
 
-filtered_mysql_url = mysql_url.sub(/:([^:]*)@/, ":<password>@")
-filtered_db_url = db_url.sub(/:([^:]*)@/, ":<password>@")
+filtered_mysql_url = mysql_url.dup.tap{|url| url.password = "REDACTED"}
+filtered_db_url = db_url.dup.tap{|url| url.password = "REDACTED"}
 
 puts "Migrating database from MySQL to PostgreSQL."
 puts
 puts "Import"
 puts "  MySQL database"
-puts "    #{filtered_mysql_url}"
+puts "    #{filtered_mysql_url.to_s}"
 puts "  into Postgres database "
-puts "    #{filtered_db_url}"
+puts "    #{filtered_db_url.to_s}"
 puts "  ?"
 puts "WARNING: This resets the given Postgres database."
 puts
@@ -50,16 +44,20 @@ if answer.downcase == "n"
   exit 0
 end
 
-if !(db_url =~ /postgresql:\/\/(.+):(.+)@([^:]+)(?::(\d+))?\/(.+)/)
+db_user, db_password, db_host, db_port, db_name = db_url.user, db_url.password, db_url.host, db_url.port, db_url.path.sub("/", "")
+db_port ||= 5432
+
+if [db_host, db_name, db_port].any?{|value| [nil, ""].include?(value)}
   puts "ERROR: Could not parse database URL (#{filtered_db_url})"
 
   exit 1
 end
 
-db_user, db_password, db_host, db_port, db_name = [$1, $2, $3, $4, $5]
-db_port ||= 5432
-
 require 'pty'
+
+# Memcached is not yet running at this point so we use the file cache store.
+# This will and is supposed to affect the spawned ruby processes.
+ENV["RAILS_CACHE_STORE"] = "file_store"
 
 def run(cmd, silent: false, record_output: true)
   output = []
@@ -72,6 +70,9 @@ def run(cmd, silent: false, record_output: true)
       end
     rescue Errno::EIO
       # raised when stdout is closed after process finished
+    ensure
+      stdout.close
+      stdin.close
     end
 
     Process.wait pid
@@ -81,7 +82,7 @@ def run(cmd, silent: false, record_output: true)
 end
 
 puts "Resetting target database..."
-drop_cmd = "PGPASSWORD=#{db_password} psql -U #{db_user} -h #{db_host} -p #{db_port} -c 'DROP DATABASE #{db_name}'"
+drop_cmd = "PGPASSWORD=#{db_password} psql -U #{db_user} -h #{db_host} -p #{db_port} -d postgres -c 'DROP DATABASE #{db_name}'"
 drop_output, _ = run drop_cmd, silent: true
 
 if drop_output.include?("database \"#{db_name}\" does not exist") || drop_output == "DROP DATABASE"
@@ -93,7 +94,7 @@ else
 end
 
 puts "Creating database..."
-create_cmd = "PGPASSWORD=#{db_password} psql -U #{db_user} -h #{db_host} -p #{db_port} -c 'CREATE DATABASE #{db_name}'"
+create_cmd = "PGPASSWORD=#{db_password} psql -U #{db_user} -h #{db_host} -p #{db_port} -d postgres -c 'CREATE DATABASE #{db_name}'"
 create_output, _ = run create_cmd, silent: true
 
 if create_output == "CREATE DATABASE"
@@ -105,22 +106,24 @@ end
 
 puts "Importing database ..."
 
+mysql_url.query = nil
+mysql_url.scheme = "mysql"
 _, pgloader_status = run "pgloader-ccl --verbose #{mysql_url} #{db_url}", record_output: false
 
 if pgloader_status != 0
   puts "\nFailed to import MySQL database into Postgres. See above."
 
-  exit pgloader_status
+  exit 1
 end
 
-check_fulltext_cmd = "PGPASSWORD=#{db_password} psql -U #{db_user} -h #{db_host} -p #{db_port} -c \"select 'true' from schema_migrations where version = '20180122135443'\""
+check_fulltext_cmd = "PGPASSWORD=#{db_password} psql -o /dev/stdout -U #{db_user} -h #{db_host} -p #{db_port} -d #{db_name} -c \"select 'true' from schema_migrations where version = '20180122135443'\""
 check_output, check_status = run check_fulltext_cmd, silent: true
 
 if check_status != 0
   puts check_output
   puts "Failed to check full-text status of database. See above."
 
-  exit check_status
+  exit 1
 end
 
 # if the version was present on MySQL already we need to redo it to
@@ -133,14 +136,22 @@ _, migrate_status = run "bundle exec rake db:migrate", record_output: false
 
 if migrate_status != 0
   puts "\nMigration failed. See above."
-
-  exit migrate_status
 end
 
 if needs_fulltext_migration
+  drop_version_cmd = "PGPASSWORD=#{db_password} psql -U #{db_user} -h #{db_host} -p #{db_port} -d #{db_name} -c \"delete from schema_migrations where version = '20180122135443'\""
+  drop_version_output, drop_version_status = run drop_version_cmd, silent: true
+
+  if drop_version_status != 0
+    puts drop_version_output
+    puts "Failed to drop schema_migrations entry. See above."
+
+    exit 1
+  end
+
   puts "Running full-text search migration"
 
-  _, redo_status = run "bundle exec rake db:migrate:redo VERSION=20180122135443", record_output: false
+  _, redo_status = run "bundle exec rake db:migrate:up VERSION=20180122135443", record_output: false
 
   if redo_status != 0
     puts "\nFull-text search migration failed. See above."
@@ -157,7 +168,7 @@ if needs_fulltext_migration
   end
 end
 
-puts "Re-building DAG to create Postgres-specific indices"
+puts "\nRe-building DAG to create Postgres-specific indices"
 _, dag_status = run "bundle exec rake db:migrate:redo VERSION=20180105130053", record_output: false
 
 if dag_status != 0
