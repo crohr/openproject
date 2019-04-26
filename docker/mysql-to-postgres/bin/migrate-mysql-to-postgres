@@ -10,17 +10,17 @@ if db_url == ""
 end
 
 if db_url.start_with?("mysql")
-  puts "ERROR: You are running MySQL. OpenProject has dropped support for MySQL."
-  puts "       We can convert it to Postgres for you. Please setup postgres and "
-  puts "       rerun this with MYSQL_DATABASE_URL pointing to your original database "
-  puts "       and DATABASE_URL pointing to a new Postgres database."
+  puts "WARNING: You are running MySQL. OpenProject will drop support for MySQL in 10.0."
+  puts "         We can convert it to Postgres for you. Please setup postgres and "
+  puts "         rerun this with MYSQL_DATABASE_URL pointing to your original database "
+  puts "         and DATABASE_URL pointing to a new Postgres database."
   puts ""
   puts "EXAMPLE: docker run \\"
   puts "           -e MYSQL_DATABASE_URL=mysql://openproject:<PASSWORD>@localhost:3306/openproject \\"
   puts "           -e DATABASE_URL=postgresql://openproject:<PASSWORD>@localhost:5432/openproject \\"
   puts "           -it openproject/community:latest"
 
-  exit 1
+  exit 0 # MySQL still supported until 9.x - with 10.0 we must make this an error (exit 1)
 end
 
 if db_url.start_with?("postgresql://") && mysql_url == ""
@@ -105,7 +105,7 @@ end
 
 puts "Importing database ..."
 
-_, pgloader_status = run "pgloader --verbose #{mysql_url} #{db_url}", record_output: false
+_, pgloader_status = run "pgloader-ccl --verbose #{mysql_url} #{db_url}", record_output: false
 
 if pgloader_status != 0
   puts "\nFailed to import MySQL database into Postgres. See above."
@@ -145,7 +145,7 @@ if needs_fulltext_migration
   if redo_status != 0
     puts "\nFull-text search migration failed. See above."
 
-    exit redo_status
+    exit 1
   end
 
   _, extract_status = run "bundle exec rake attachments:extract_fulltext_where_missing", record_output: false
@@ -153,8 +153,17 @@ if needs_fulltext_migration
   if extract_status != 0
     puts "\nFull-text extraction failed. See above."
 
-    exit extract_status
+    exit 1
   end
+end
+
+puts "Re-building DAG to create Postgres-specific indices"
+_, dag_status = run "bundle exec rake db:migrate:redo VERSION=20180105130053", record_output: false
+
+if dag_status != 0
+  puts "\nRebuild DAG migration failed. See above."
+
+  exit 1
 end
 
 puts "Migration from MySQL to Postgres completed successfully!"
