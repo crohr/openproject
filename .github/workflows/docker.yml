@@ -1,0 +1,23 @@
+name: Publish to Registry
+on:
+  # Scheduled workflows run on the latest commit on the default or base branch
+  schedule:
+    - cron: '20 2 * * *' # Daily at 02:20
+  push:
+    branches:
+      - stable/11
+      - stable/10
+      - feature/build-docker-image-from-action
+jobs:
+  dockerize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: Publish to registry
+        uses: elgohr/Publish-Docker-Github-Action@master
+        with:
+          name: openproject/community-test
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          tag_semver: true
+          cache: ${{ github.event_name != 'schedule' }}
