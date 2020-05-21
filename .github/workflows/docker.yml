@@ -3,15 +3,14 @@ on:
   # Scheduled workflows run on the latest commit on the default or base branch
   schedule:
     - cron: '20 2 * * *' # Daily at 02:20
+
   push:
-    branches:
-      - stable/11
-      - stable/10
-      - feature/build-docker-image-from-action
+    tags:
+      - v*
 jobs:
   publish:
     # restrict this job to base repo for now
-    if: github.repository == 'opf/openproject'
+    if: github.repository == 'crohr/openproject'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
