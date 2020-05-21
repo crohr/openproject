@@ -19,7 +19,7 @@ jobs:
       if: contains(github.ref, 'bim/') || contains(github.head_ref, 'bim/')
       run: |
         echo "OPENPROJECT_EDITION=bim" >> .env.pullpreview
-    - uses: pullpreview/action@master
+    - uses: pullpreview/action@fix-non-org-repos
       with:
         admins: crohr,HDinger,machisuji,oliverguenther,ulferts,wielinde
         always_on: dev
