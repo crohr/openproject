@@ -6,7 +6,7 @@ on:
 
   push:
     tags:
-      - test1.*
+      - v10.*
 jobs:
   publish:
     # restrict this job to base repo for now
