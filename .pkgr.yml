@@ -14,7 +14,7 @@ after_precompile: "packaging/teardown"
 installer: https://github.com/pkgr/installer.git
 wizards:
   - https://github.com/pkgr/addon-legacy-installer.git
-  - https://github.com/opf/addon-openproject-edition.git
+  - https://github.com/opf/addon-openproject-edition.git#bim
   - https://github.com/pkgr/addon-postgres
   - https://github.com/pkgr/addon-apache2.git
   - https://github.com/finnlabs/addon-repositories.git
