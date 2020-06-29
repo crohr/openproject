@@ -9,6 +9,8 @@ targets:
       - unrtf
       - tesseract-ocr
       - catdoc
+services:
+  - postgres
 before_precompile: "packaging/setup"
 after_precompile: "packaging/teardown"
 installer: https://github.com/pkgr/installer.git
