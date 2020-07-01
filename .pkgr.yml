@@ -5,6 +5,7 @@ targets:
     build_dependencies:
       - libsqlite3-dev
     dependencies:
+      - unzip
       - poppler-utils
       - unrtf
       - tesseract-ocr
