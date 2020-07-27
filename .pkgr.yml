@@ -10,6 +10,11 @@ targets:
       - unrtf
       - tesseract-ocr
       - catdoc
+  debian-10:
+    <<: *debian9
+  centos-8:
+    dependencies:
+      - epel-release
 services:
   - postgres
 before_precompile: "packaging/setup"
